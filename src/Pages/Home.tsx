@@ -1,20 +1,23 @@
 import { useState, useEffect } from "react";
 import { User } from "../Types/User";
-import { useRandomUser } from "../Hooks/useRandomUser";
+import { useRandomUsers } from "../Hooks/useRandomUsers";
 import { UserCard } from "../Components/UserCard";
 import { Loading } from "../Components/Loading";
 
 export function Home() {
-  const { getRandomUser } = useRandomUser();
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
+  const { getRandomUsers } = useRandomUsers();
+  const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const [perPage] = useState(10);
+  const [page, setPage] = useState(1);
 
   async function fetchUser() {
     try {
       setLoading(true);
-      const user = await getRandomUser();
-      // await new Promise((resolve) => setTimeout(resolve, 1000));
-      setUser(user);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      // await new Promise((r) => setTimeout(r, 10000));
+      const users = await getRandomUsers(page, perPage);
+      setUsers(users);
     } catch (e: any) {
       console.log(e);
     } finally {
@@ -22,28 +25,39 @@ export function Home() {
     }
   }
 
+  function addPage(value: number) {
+    setPage((v) => Math.max(1, v + value));
+  }
+
   useEffect(() => {
     fetchUser();
-  }, []);
+  }, [page]);
 
   return (
-    <div className="flex h-screen flex-col bg-[#F9F9F9]">
-      <div className="relative h-1/3 bg-primary">
+    <div className="flex flex-col" data-theme="light">
+      <div className="relative h-56 bg-primary">
         <div className="absolute top-24 w-full">
-          <div className="container mx-auto flex max-w-2xl flex-col gap-3 ">
-            <div className="flex h-[400px] items-center justify-center gap-5 rounded-md bg-white p-5 shadow">
-              {loading ? (
-                <Loading className="w-1/2" />
-              ) : (
-                user && <UserCard user={user} />
-              )}
-            </div>
-            <button
-              className={`btn-primary btn ${loading ? "loading" : ""}`}
-              onClick={() => fetchUser()}
-            >
-              {loading ? "Searching user" : "Search new user"}
-            </button>
+          <div className="container mx-auto flex max-w-2xl flex-col items-center gap-3 p-3">
+            {loading ? (
+              <Loading title="Loading users..." />
+            ) : (
+              <>
+                <div className="flex w-full flex-col gap-2">
+                  {users.map((user) => (
+                    <UserCard user={user} key={user.login.uuid} />
+                  ))}
+                </div>
+                <div className="btn-group ">
+                  <button className="btn" onClick={() => addPage(-1)}>
+                    {`<`}
+                  </button>
+                  <button className={`btn-active btn`}>{page}</button>
+                  <button className="btn" onClick={() => addPage(1)}>
+                    {`>`}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
